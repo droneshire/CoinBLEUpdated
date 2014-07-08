@@ -1,0 +1,79 @@
+dim result
+
+dim in(16) # endpoint data in
+dim in_len
+
+dim out(16) # endpoint data out
+dim out_len
+
+dim count
+
+event system_boot(major,minor,patch,build,ll_version,protocol,hw)
+
+    call gap_set_mode(gap_general_discoverable,gap_undirected_connectable)
+    call sm_set_bondable_mode(1)
+    call hardware_set_txpower(15)
+    call system_endpoint_set_watermarks(system_endpoint_uart1, 0, 0) # disable watermarks
+    
+	call hardware_io_port_config_direction(0, 1)
+   #   call hardware_io_port_config_direction(1, 1)
+    call hardware_io_port_write(0, $30, 0)
+   # call hardware_io_port_write(rs, 1, 0)    
+
+    count=0
+end
+
+event connection_status(connection, flags, address, address_type, conn_interval, timeout, latency, bonding)
+	call system_endpoint_set_watermarks(system_endpoint_uart1, 0, 1)	#disable RX, set TX watermarks
+end
+
+event attributes_value(connection, reason, handle, offset, value_len, value_data)
+  # Characteristic TX has been written
+  if handle = xgatt_tx then 
+	out(0:value_len) = value_data(0:value_len)
+	out_len = value_len
+	call system_endpoint_set_watermarks(system_endpoint_uart1, $FF, out_len)	#disable RX watermarks
+  end if
+end
+
+event system_endpoint_watermark_rx(endpoint, data)
+	call system_endpoint_set_watermarks(system_endpoint_uart1, 0, $FF) # disable RX watermark
+	call system_endpoint_rx(system_endpoint_uart1, )
+end
+
+event system_endpoint_watermark_tx(endpoint, size)
+    if endpoint = system_endpoint_uart1 then
+        call system_endpoint_set_watermarks(system_endpoint_uart1, $FF, 0) # disable TX watermark
+        call system_endpoint_tx(system_endpoint_uart1, out_len, out(0:out_len))
+		out_len=0
+		call system_endpoint_set_watermarks(system_endpoint_uart1, 1, $FF) # disable TX watermark
+    end if
+end
+
+event system_endpoint_watermark_rx(endpoint, size)
+  
+	if endpoint=system_endpoint_uart1 then
+		in_len=2
+		if in_len > 16 then
+			in_len = 16
+		end if
+		
+		call system_endpoint_set_watermarks(system_endpoint_uart1, 0, $FF) ##disable RX watermarks
+		call system_endpoint_rx(system_endpoint_uart1, 1)(result, in_len, in(0:in_len))
+		
+		count = count + in_len
+		call attributes_write(xgatt_rx, 0, in_len, in(0:in_len))
+		
+		count = 0
+		
+	end if
+  
+end
+
+event connection_disconnected(handle,reason)
+    call hardware_io_port_config_direction(0, 1)
+    call hardware_io_port_write(0, $30, 0)
+	
+	call system_endpoint_set_watermarks(system_endpoint_uart1, 0, 0) # disable watermarks
+    call gap_set_mode(gap_general_discoverable,gap_undirected_connectable)
+end
