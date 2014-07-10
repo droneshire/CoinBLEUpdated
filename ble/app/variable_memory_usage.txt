@@ -1,4 +1,4 @@
-48
+52
 0:0	GAP_AD_FLAG_BREDR_NOT_SUPPORTED
 0:0	GAP_AD_FLAG_GENERAL_DISCOVERABLE
 0:0	GAP_AD_FLAG_LIMITED_DISCOVERABLE
@@ -81,8 +81,7 @@
 0:0	xgatt_rx_buf_count
 0:0	xgatt_tx
 0:4	result
-4:16	in
-20:4	in_len
-24:16	out
-40:4	out_len
-44:4	count
+4:20	in
+24:4	in_len
+28:20	out
+48:4	out_len
