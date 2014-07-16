@@ -26,7 +26,6 @@ event system_endpoint_watermark_tx(endpoint, size)
         call system_endpoint_set_watermarks(system_endpoint_uart1, 1, 0) # disable TX watermark and enable RX
         call system_endpoint_tx(system_endpoint_uart1, out_len, out(0:out_len))
 		out_len=0
-		#call system_endpoint_set_watermarks(system_endpoint_uart1, 1, $FF) # enable RX watermark
     end if
 end
 
